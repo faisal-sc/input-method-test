@@ -323,6 +323,7 @@
     const MAX_FILES = 10;
 
     const isMobileDevice = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isIOSDevice = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
     const fileToBase64 = (file) =>
       new Promise((resolve, reject) => {
@@ -376,6 +377,7 @@
 
     const DebugBanner = () => {
       const isMobile = isMobileDevice();
+      const isIOS = isIOSDevice();
       const ua = navigator.userAgent;
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -383,9 +385,10 @@
 
       return (
         <div className="debug-banner">
-          <div><span>Device: </span><strong>{isMobile ? "Mobile" : "Desktop"}</strong></div>
+          <div><span>Device: </span><strong>{isIOS ? "iOS" : isMobile ? "Android" : "Desktop"}</strong></div>
+          <div><span>Mode: </span><strong>{isIOS ? "Direct picker" : "Menu"}</strong></div>
           <div><span>Screen: </span><strong>{w}x{h} @{dpr}x</strong></div>
-          <div><span>UA: </span><strong>{ua.length > 60 ? ua.slice(0, 60) + "..." : ua}</strong></div>
+          <div><span>UA: </span><strong>{ua.length > 50 ? ua.slice(0, 50) + "..." : ua}</strong></div>
         </div>
       );
     };
@@ -441,7 +444,7 @@
       const fileInputRef = useRef(null);
       const [selectedImages, setSelectedImages] = useState([]);
       const [toast, setToast] = useState(null);
-      const isMobile = isMobileDevice();
+      const isIOS = isIOSDevice();
 
       const openFileInput = useCallback(() => {
         const input = fileInputRef.current;
@@ -455,7 +458,7 @@
         const input = fileInputRef.current;
         if (!input) return;
         input.setAttribute("capture", "environment");
-        input.multiple = false;
+        input.multiple = true;
         input.click();
       }, []);
 
@@ -533,21 +536,32 @@
               help="You can only add up to 10 media files. Supported formats: JPEG, PNG. Maximum file size: 10MB."
               isRequired
             >
-              <Menu
-                trigger={
-                  <button
-                    className="add-media-btn"
-                    disabled={selectedImages.length >= MAX_FILES}
-                  >
-                    <ImagesIcon />
-                    Add media
-                  </button>
-                }
-                items={[
-                  { icon: <CameraIcon />, label: "Take Photo", onClick: handleTakePhoto },
-                  { icon: <ImagesIcon />, label: "Photo Library", onClick: openFileInput },
-                ]}
-              />
+              {isIOS ? (
+                <button
+                  className="add-media-btn"
+                  onClick={openFileInput}
+                  disabled={selectedImages.length >= MAX_FILES}
+                >
+                  <ImagesIcon />
+                  Add media
+                </button>
+              ) : (
+                <Menu
+                  trigger={
+                    <button
+                      className="add-media-btn"
+                      disabled={selectedImages.length >= MAX_FILES}
+                    >
+                      <ImagesIcon />
+                      Add media
+                    </button>
+                  }
+                  items={[
+                    { icon: <CameraIcon />, label: "Take Photo", onClick: handleTakePhoto },
+                    { icon: <ImagesIcon />, label: "Photo Library", onClick: openFileInput },
+                  ]}
+                />
+              )}
 
               <input
                 ref={fileInputRef}
