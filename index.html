@@ -438,29 +438,62 @@
       );
     };
 
+    // --- AddMediaMenu ---
+
+    const AddMediaMenu = ({ onFileChange, disabled }) => {
+      const fileInputRef = useRef(null);
+      const isIOS = isIOSDevice();
+
+      const triggerFileInput = useCallback((capture) => {
+        const input = fileInputRef.current;
+        if (!input) return;
+        if (capture) {
+          input.setAttribute("capture", "environment");
+        } else {
+          input.removeAttribute("capture");
+        }
+        input.multiple = true;
+        input.click();
+      }, []);
+
+      return (
+        <React.Fragment>
+          {isIOS ? (
+            <button className="add-media-btn" onClick={() => triggerFileInput()} disabled={disabled}>
+              <ImagesIcon />
+              Add media
+            </button>
+          ) : (
+            <Menu
+              trigger={
+                <button className="add-media-btn" disabled={disabled}>
+                  <ImagesIcon />
+                  Add media
+                </button>
+              }
+              items={[
+                { icon: <CameraIcon />, label: "Take Photo", onClick: () => triggerFileInput(true) },
+                { icon: <ImagesIcon />, label: "Photo Library", onClick: () => triggerFileInput() },
+              ]}
+            />
+          )}
+          <input
+            ref={fileInputRef}
+            className="hidden-file-input"
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            onChange={onFileChange}
+          />
+        </React.Fragment>
+      );
+    };
+
     // --- InputMethodSelection ---
 
     const InputMethodSelection = () => {
-      const fileInputRef = useRef(null);
       const [selectedImages, setSelectedImages] = useState([]);
       const [toast, setToast] = useState(null);
-      const isIOS = isIOSDevice();
-
-      const openFileInput = useCallback(() => {
-        const input = fileInputRef.current;
-        if (!input) return;
-        input.removeAttribute("capture");
-        input.multiple = true;
-        input.click();
-      }, []);
-
-      const handleTakePhoto = useCallback(() => {
-        const input = fileInputRef.current;
-        if (!input) return;
-        input.setAttribute("capture", "environment");
-        input.multiple = true;
-        input.click();
-      }, []);
 
       const handleFileChange = useCallback(async (e) => {
         const files = e.target.files;
@@ -536,40 +569,9 @@
               help="You can only add up to 10 media files. Supported formats: JPEG, PNG. Maximum file size: 10MB."
               isRequired
             >
-              {isIOS ? (
-                <button
-                  className="add-media-btn"
-                  onClick={openFileInput}
-                  disabled={selectedImages.length >= MAX_FILES}
-                >
-                  <ImagesIcon />
-                  Add media
-                </button>
-              ) : (
-                <Menu
-                  trigger={
-                    <button
-                      className="add-media-btn"
-                      disabled={selectedImages.length >= MAX_FILES}
-                    >
-                      <ImagesIcon />
-                      Add media
-                    </button>
-                  }
-                  items={[
-                    { icon: <CameraIcon />, label: "Take Photo", onClick: handleTakePhoto },
-                    { icon: <ImagesIcon />, label: "Photo Library", onClick: openFileInput },
-                  ]}
-                />
-              )}
-
-              <input
-                ref={fileInputRef}
-                className="hidden-file-input"
-                type="file"
-                accept="image/jpeg,image/png"
-                multiple
-                onChange={handleFileChange}
+              <AddMediaMenu
+                onFileChange={handleFileChange}
+                disabled={selectedImages.length >= MAX_FILES}
               />
 
               {selectedImages.length > 0 && (
