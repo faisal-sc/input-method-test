@@ -235,6 +235,57 @@
       cursor: not-allowed;
     }
 
+    /* Menu (popover) */
+    .menu-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .menu-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 49;
+    }
+    .menu-content {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+      z-index: 50;
+      overflow: hidden;
+      animation: menu-in 0.15s ease-out;
+      padding: 4px 0;
+    }
+    @keyframes menu-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1b1b1d;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s;
+    }
+    .menu-item:hover { background: #f5f5f5; }
+    .menu-item:active { background: #ebebeb; }
+    .menu-item svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: #6b6b6f;
+    }
+
     /* Validation error toast */
     .toast {
       position: fixed;
@@ -304,6 +355,19 @@
       </svg>
     );
 
+    const CameraIcon = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+        <circle cx="12" cy="13" r="4" />
+      </svg>
+    );
+
+    const FolderOpenIcon = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+      </svg>
+    );
+
     // --- Toast ---
 
     const Toast = ({ message, onDone }) => {
@@ -347,16 +411,55 @@
       </div>
     );
 
+    // --- Menu ---
+
+    const Menu = ({ trigger, items }) => {
+      const [open, setOpen] = useState(false);
+
+      return (
+        <div className="menu-wrapper">
+          {React.cloneElement(trigger, { onClick: () => setOpen(true) })}
+          {open && (
+            <React.Fragment>
+              <div className="menu-backdrop" onClick={() => setOpen(false)} />
+              <div className="menu-content" role="menu">
+                {items.map((item, i) => (
+                  <button
+                    key={i}
+                    className="menu-item"
+                    role="menuitem"
+                    onClick={() => { setOpen(false); item.onClick(); }}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </React.Fragment>
+          )}
+        </div>
+      );
+    };
+
     // --- InputMethodSelection ---
 
     const InputMethodSelection = () => {
       const fileInputRef = useRef(null);
       const [selectedImages, setSelectedImages] = useState([]);
       const [toast, setToast] = useState(null);
+      const isMobile = isMobileDevice();
 
-      const handleAddMediaClick = useCallback(() => {
-        // Always use file picker in this standalone test (no camera capture)
-        fileInputRef.current?.click();
+      const openFileInput = useCallback((options) => {
+        const input = fileInputRef.current;
+        if (!input) return;
+        if (options?.capture) {
+          input.setAttribute("capture", "environment");
+          input.multiple = false;
+        } else {
+          input.removeAttribute("capture");
+          input.multiple = true;
+        }
+        input.click();
       }, []);
 
       const handleFileChange = useCallback(async (e) => {
@@ -433,14 +536,33 @@
               help="You can only add up to 10 media files. Supported formats: JPEG, PNG. Maximum file size: 10MB."
               isRequired
             >
-              <button
-                className="add-media-btn"
-                onClick={handleAddMediaClick}
-                disabled={selectedImages.length >= MAX_FILES}
-              >
-                <ImagesIcon />
-                Add media
-              </button>
+              {isMobile ? (
+                <Menu
+                  trigger={
+                    <button
+                      className="add-media-btn"
+                      disabled={selectedImages.length >= MAX_FILES}
+                    >
+                      <ImagesIcon />
+                      Add media
+                    </button>
+                  }
+                  items={[
+                    { icon: <ImagesIcon />, label: "Photo Library", onClick: () => openFileInput() },
+                    { icon: <CameraIcon />, label: "Take Photo", onClick: () => openFileInput({ capture: true }) },
+                    { icon: <FolderOpenIcon />, label: "Choose Files", onClick: () => openFileInput() },
+                  ]}
+                />
+              ) : (
+                <button
+                  className="add-media-btn"
+                  onClick={() => openFileInput()}
+                  disabled={selectedImages.length >= MAX_FILES}
+                >
+                  <ImagesIcon />
+                  Add media
+                </button>
+              )}
 
               <input
                 ref={fileInputRef}
