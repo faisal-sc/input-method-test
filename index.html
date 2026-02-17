@@ -386,7 +386,7 @@
       return (
         <div className="debug-banner">
           <div><span>Device: </span><strong>{isIOS ? "iOS" : isMobile ? "Android" : "Desktop"}</strong></div>
-          <div><span>Mode: </span><strong>{isIOS ? "Direct picker" : "Menu"}</strong></div>
+          <div><span>Mode: </span><strong>Menu</strong></div>
           <div><span>Screen: </span><strong>{w}x{h} @{dpr}x</strong></div>
           <div><span>UA: </span><strong>{ua.length > 50 ? ua.slice(0, 50) + "..." : ua}</strong></div>
         </div>
@@ -442,7 +442,6 @@
 
     const AddMediaMenu = ({ onFileChange, disabled }) => {
       const fileInputRef = useRef(null);
-      const isIOS = isIOSDevice();
 
       const triggerFileInput = useCallback((capture) => {
         const input = fileInputRef.current;
@@ -458,25 +457,18 @@
 
       return (
         <React.Fragment>
-          {isIOS ? (
-            <button className="add-media-btn" onClick={() => triggerFileInput()} disabled={disabled}>
-              <ImagesIcon />
-              Add media
-            </button>
-          ) : (
-            <Menu
-              trigger={
-                <button className="add-media-btn" disabled={disabled}>
-                  <ImagesIcon />
-                  Add media
-                </button>
-              }
-              items={[
-                { icon: <CameraIcon />, label: "Take Photo", onClick: () => triggerFileInput(true) },
-                { icon: <ImagesIcon />, label: "Photo Library", onClick: () => triggerFileInput() },
-              ]}
-            />
-          )}
+          <Menu
+            trigger={
+              <button className="add-media-btn" disabled={disabled}>
+                <ImagesIcon />
+                Add media
+              </button>
+            }
+            items={[
+              { icon: <CameraIcon />, label: "Take Photo", onClick: () => triggerFileInput(true) },
+              { icon: <ImagesIcon />, label: "Photo Library", onClick: () => triggerFileInput() },
+            ]}
+          />
           <input
             ref={fileInputRef}
             className="hidden-file-input"
